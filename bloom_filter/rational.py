@@ -5,21 +5,8 @@ A rational filter implemented in Python.
 import random
 from sympy import isprime
 import math
-from pprint import pprint
 random.seed(2)
 import xxhash
-
-
-
-def generate_random_prime(length):
-    """
-    Generate a random prime greater than length.
-    :param length: The length of the prime to generate.
-    return: A random prime greater than length.
-    """
-    primes = [i for i in range(length, 1000) if isprime(i)]
-    return random.choice(primes)
-
 
 class RationalFilter:
     """
@@ -41,7 +28,6 @@ class RationalFilter:
         self.n = n
         self.k, self.bit_length, self.bitmap, self.fpr = self.calculate_parameters(n, fp)
         self.r = self.k - math.floor(self.k)
-        self.prime = generate_random_prime(self.bit_length)
         self.upper_k, self.lower_k = self.sample_k()
         self.h1 = xxhash.xxh64
         self.h2 = xxhash.xxh64

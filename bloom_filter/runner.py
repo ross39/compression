@@ -19,8 +19,6 @@ if __name__ == '__main__':
     upper_k = data[:u_k]
     lower_k = data[-l_k:]
     #convert values in upper_k and lower_k to bytes
-    upper_k = [bytes(str(i), 'utf-8') for i in upper_k]
-    lower_k = [bytes(str(i), 'utf-8') for i in lower_k]
 
     for i in lower_k:
         bloomy.add(i, math.floor(bloomy.k))
@@ -28,7 +26,7 @@ if __name__ == '__main__':
     for i in upper_k:
         bloomy.add(i, math.floor(bloomy.k + 1))
 
-    #get upper_k of N 
+    #getupper_k of N 
     pprint("=====================================")
     pprint("n: {}".format(n))
     pprint("fp: {}".format(fp))
@@ -64,13 +62,22 @@ if __name__ == '__main__':
     upper_k = dummy[:upper_k]
     lower_k = dummy[-lower_k:]
     #convert values in upper_k and lower_k to bytes
-    upper_k = [bytes(str(i), 'utf-8') for i in upper_k]
-    lower_k = [bytes(str(i), 'utf-8') for i in lower_k]
 
     #query the filtef for values in upper_k and lower_k
     for i in upper_k:
         if bloomy.query(i, math.floor(bloomy.k + 1)):
             pprint("True or false positive: {}".format(i)) 
+            if i in data:
+                witness.append(1) #true positive
+            else:
+                witness.append(0) #false positive
     for i in lower_k:
         if bloomy.query(i, math.floor(bloomy.k)):
             pprint("True or false positive: {}".format(i))
+            if i in data:
+                witness.append(1)
+            else:
+                witness.append(0)
+    print("=====================================")
+    print("Witness: {}".format(witness))
+    print("witnes length: {}".format(len(witness)))

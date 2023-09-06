@@ -79,7 +79,6 @@ class RationalFilter:
             hash_values.append(hash_func(data))
         
         index_values = [h % self.bit_length for h in hash_values]
-        pprint("index values and input: {} {}".format(index_values, data))
         for idx in index_values:
             self.bitmap[idx] = 1
 
@@ -99,7 +98,6 @@ class RationalFilter:
             hash_values.append(hash_func(data))
 
         index_values = [h % self.bit_length for h in hash_values]
-        pprint("index values and input: {} {}".format(index_values, data))
         for idx in index_values:
             if self.bitmap[idx] == 0:
                 return False

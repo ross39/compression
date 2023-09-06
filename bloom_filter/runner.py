@@ -7,6 +7,8 @@ from pprint import pprint
 
 if __name__ == '__main__':
     data = [2,3,8,9,15,16,17]
+    witness = []
+    fp = []
     #convert values in data to bytes
     data = [bytes(str(i), 'utf-8') for i in data]
     n = len(data)
@@ -49,3 +51,26 @@ if __name__ == '__main__':
         pprint("Querying: {}".format(i))
         pprint(bloomy.query(i, math.floor(bloomy.k)))
     pprint("=====================================")
+    pprint("Check FPR on dummy data")
+    #generate dummy data and convert to bytes
+    dummy = [i for i in range(0, 100)]
+    dummy = [bytes(str(i), 'utf-8') for i in dummy]
+    #need r to accurately split the data 
+    r = bloomy.r
+    #split the data into upper and lower k
+    upper_k = math.floor( r * len(dummy)) 
+    lower_k = math.ceil((1 - r) * len(dummy))
+
+    upper_k = dummy[:upper_k]
+    lower_k = dummy[-lower_k:]
+    #convert values in upper_k and lower_k to bytes
+    upper_k = [bytes(str(i), 'utf-8') for i in upper_k]
+    lower_k = [bytes(str(i), 'utf-8') for i in lower_k]
+
+    #query the filtef for values in upper_k and lower_k
+    for i in upper_k:
+        if bloomy.query(i, math.floor(bloomy.k + 1)):
+            pprint("True or false positive: {}".format(i)) 
+    for i in lower_k:
+        if bloomy.query(i, math.floor(bloomy.k)):
+            pprint("True or false positive: {}".format(i))

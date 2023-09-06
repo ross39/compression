@@ -5,21 +5,11 @@ A rational filter implemented in Python.
 import random
 from sympy import isprime
 import math
+from pprint import pprint
+random.seed(2)
+import xxhash
 
 
-def hashing_function(prime, length, data:int):
-
-    """
-    A hashing function that takes a prime number, a prime number greater than the length of the data, the length of the
-    Is of the form (b + a * v) mod prime ) mod length where 1 <= a < p and 0 <= b < p.
-    :param prime: A prime number greater than the length of the data.
-    :param length: The length of the data.
-    :param data: The data to hash.
-    :return: an index in the range 0 <= index < length.
-    """
-    a = random.randint(1, prime - 1)
-    b = random.randint(0, prime - 1)
-    return ((b + a * data) % prime) % length
 
 def generate_random_prime(length):
     """
@@ -51,9 +41,10 @@ class RationalFilter:
         self.n = n
         self.k, self.bit_length, self.bitmap, self.fpr = self.calculate_parameters(n, fp)
         self.r = self.k - math.floor(self.k)
+        self.prime = generate_random_prime(self.bit_length)
         self.upper_k, self.lower_k = self.sample_k()
-        self.h1 = hashing_function
-        self.h2 = hashing_function
+        self.h1 = xxhash.xxh64
+        self.h2 = xxhash.xxh64
 
     def calculate_parameters(self,n, fp):
         """
@@ -84,11 +75,11 @@ class RationalFilter:
         hash_values = []
 
         for hash in range(k):
-            hash_func = self.generate_hash_functions(hash, generate_random_prime(self.bit_length))
+            hash_func = self.generate_hash_functions(hash)
             hash_values.append(hash_func(data))
         
         index_values = [h % self.bit_length for h in hash_values]
-        print(index_values)
+        pprint("index values and input: {} {}".format(index_values, data))
         for idx in index_values:
             self.bitmap[idx] = 1
 
@@ -104,10 +95,11 @@ class RationalFilter:
         hash_values = []
 
         for hash in range(k):
-            hash_func = self.generate_hash_functions(hash, generate_random_prime(self.bit_length))
+            hash_func = self.generate_hash_functions(hash)
             hash_values.append(hash_func(data))
 
         index_values = [h % self.bit_length for h in hash_values]
+        pprint("index values and input: {} {}".format(index_values, data))
         for idx in index_values:
             if self.bitmap[idx] == 0:
                 return False
@@ -124,15 +116,15 @@ class RationalFilter:
         upper_k = self.r * self.n
         lower_k = (1 -self.r) * self.n
 
-        return math.ceil(upper_k), math.floor(lower_k)
+        return math.floor(upper_k), math.ceil(lower_k)
 
-    def generate_hash_functions(self, n:int, prime):
+    def generate_hash_functions(self, n:int):
         """
         Generate the hash functions for the filter.
         :param n: The number of hash functions to generate.
         """
         def hash_function(data):
-            return self.h1(prime, self.bit_length, data) + (n * self.h2(prime, self.bit_length, data))
+            return self.h1(data).intdigest() + (n * self.h2(data).intdigest())
 
         return hash_function
 

@@ -37,8 +37,6 @@ class RationalFilter:
     A rational filter is a bloom filter that uses different hash functions for different values
     It essentially bypasses the integrality assumption of the standard bloom filter.
     @Param n: The number of values in the filter.
-    @Param p: The positive rational
-    @Param q: The negative rational
     @Param k: The number of hash functions to use.
     @Param bit_length: The length of the bit array.
     @Param bitmap: The bit array.
@@ -49,27 +47,32 @@ class RationalFilter:
     @Param h1: The first hash function.
     @Param h2: The second hash function.
     """
-    def __init__(self,n,p,q):
+    def __init__(self,n, fp):
         self.n = n
-        self.p = p
-        self.q = q
-        self.k, self.bit_length, self.bitmap, self.fpr = self.calculate_parameters(p,n,q)
+        self.k, self.bit_length, self.bitmap, self.fpr = self.calculate_parameters(n, fp)
         self.r = self.k - math.floor(self.k)
         self.upper_k, self.lower_k = self.sample_k()
         self.h1 = hashing_function
         self.h2 = hashing_function
 
-    def calculate_parameters(self,p, n, q):
+    def calculate_parameters(self,n, fp):
         """
         Calculate the parameters for the rational filter.
         :param length: The length of the data.
+        :param fp: The false positive rate.
+        @return k: The number of hash functions to use.
+        @return bit_length: The length of the bit array.
+        @return bitmap: The actual filter
+        @return fp: The false positive rate.
         """
-        L = math.log(2)
-        GAMMA  = (1 / math.log(2)) ** 2
-        k = math.log10(q * L ** 2 / p) 
-        fpr = p * GAMMA ** 2 / q
-        bit_length = (p*n) * k * GAMMA
-        return k, math.ceil(bit_length), [0] * math.ceil(bit_length), fpr
+        ln_pfp = math.log(fp)
+        ln_2 = math.log(2)
+
+        k = -(ln_pfp / ln_2)
+        bit_length = -(n * ln_pfp / ln_2**2)
+
+        # we will use math.ceil to approximate the values to the next integer
+        return k, math.ceil(bit_length), [0] * math.ceil(bit_length), fp
 
     def add(self, data, k):
         """
@@ -78,12 +81,14 @@ class RationalFilter:
         :param k: The number of hash functions to use.
         "return The index values of the data.
         """
-        index_values = []
+        hash_values = []
 
         for hash in range(k):
             hash_func = self.generate_hash_functions(hash, generate_random_prime(self.bit_length))
-            index_values.append(hash_func(data))
+            hash_values.append(hash_func(data))
         
+        index_values = [h % self.bit_length for h in hash_values]
+        print(index_values)
         for idx in index_values:
             self.bitmap[idx] = 1
 
@@ -96,12 +101,13 @@ class RationalFilter:
         :param k: The number of hash functions to use.
         :return: True if the data is in the filter, False otherwise.
         """
-        index_values = []
+        hash_values = []
 
         for hash in range(k):
             hash_func = self.generate_hash_functions(hash, generate_random_prime(self.bit_length))
-            index_values.append(hash_func(data))
+            hash_values.append(hash_func(data))
 
+        index_values = [h % self.bit_length for h in hash_values]
         for idx in index_values:
             if self.bitmap[idx] == 0:
                 return False

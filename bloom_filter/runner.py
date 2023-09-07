@@ -9,7 +9,7 @@ import random
 if __name__ == '__main__':
     # Define N & T
     N = [i for i in range(0, 100)]
-    T = [i for i in random.sample(range(0, 100), 20)]
+    T = [i for i in random.sample(range(0, 100), 30)]
     witness = []
     fp = []
     t = []
@@ -60,15 +60,6 @@ if __name__ == '__main__':
     pprint("Initiating sanity check...")
     pprint("Check that the true positives are in the filter...")
 
-    for i in upper_k:
-        pprint("checking using k = {}".format(math.floor(bloomy.k)))
-        pprint(bloomy.query(i, math.floor(bloomy.k)))
-
-    for i in lower_k:
-        pprint("checking using k = {}".format(math.floor(bloomy.k + 1)))
-        pprint(bloomy.query(i, math.floor(bloomy.k + 1)))
-        
-
     pprint("=============================================================")
     pprint("now we query the set N against the filter...")
 
@@ -78,28 +69,71 @@ if __name__ == '__main__':
     upper_k_n = N[:math.floor(u_k_n)]
     lower_k_n = N[-math.ceil(l_k_n):]
 
+    #convert t to a set, should get faster lookups 
+    #T = set(T)
     for i in upper_k_n:
         if i in T:
             if bloomy.query(i, math.floor(bloomy.k)):
-                t.append(i)
+                witness.append(1)
         else:
             if bloomy.query(i, math.floor(bloomy.k + 1)):
-                fp.append(i)
+                witness.append(0)
 
     for i in lower_k_n:
         if i in T:
             if bloomy.query(i, math.floor(bloomy.k)):
-                t.append(i)
+                witness.append(1)
         else:
             if bloomy.query(i, math.floor(bloomy.k + 1)):
-                fp.append(i)
+                witness.append(0)
      
     pprint("=============================================================")
-    pprint("The true positives are: {}".format(t))
-    pprint("The false positives are: {}".format(fp))
-    pprint("size of true positives is: {}".format(len(t)))
-    pprint("size of false positives is: {}".format(len(fp)))
+    pprint("The witness size is: {}".format(len(witness)))
+    pprint("the true positives are in the filter(should be equal to size of T): {}".format(witness.count(1)))
+    pprint("the false positives are in the filter: {}".format(witness.count(0)))
+    pprint("=============================================================")
+    pprint("=============================================================")
+    pprint("=============================================================")
+    pprint("Now we decode to recover T..")
+    reconstructed_T = []
+    caught = []
+    count = 0
 
+    for i in upper_k_n:
+        contained = 1
+        if bloomy.query(i, math.floor(bloomy.k + 1)) == False:
+            if bloomy.query(i, math.floor(bloomy.k)) == False:
+                contained = 0
+        if contained == 1:
+            caught.append(i)
+
+    for i in lower_k_n:
+        contained = 1
+        if bloomy.query(i, math.floor(bloomy.k + 1)) == False:
+            if bloomy.query(i, math.floor(bloomy.k)) == False:
+                contained = 0
+        if contained == 1:
+            caught.append(i)
+
+    pprint("caught is size: {}".format(len(caught)))
+
+    for i in caught:
+        try:
+            if witness[count] == 1:
+                reconstructed_T.append(i)
+                count += 1
+            elif witness[count] == 0:
+                count += 1
+        except IndexError:
+            break
+
+    print("recovered t size is: {}".format(len(reconstructed_T)))
+    #print first 20 elements of T
+    T.sort()
+    reconstructed_T.sort()
+
+    pprint("the first 20 elements of T are: {}".format(T[:20]))
+    pprint("the first 20 elements of reconstructed T are: {}".format(reconstructed_T[:20]))
 
 
 

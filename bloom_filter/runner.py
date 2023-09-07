@@ -1,83 +1,105 @@
 import rational
 import math
 from pprint import pprint
+import random
 """ 
     This file is used to run the application.
 """
 
 if __name__ == '__main__':
-    data = [2,3,8,9,15,16,17]
+    # Define N & T
+    N = [i for i in range(0, 100)]
+    T = [i for i in random.sample(range(0, 100), 20)]
     witness = []
     fp = []
-    #convert values in data to bytes
-    data = [bytes(str(i), 'utf-8') for i in data]
-    n = len(data)
-    fp = 0.01
-    bloomy = rational.RationalFilter(n, fp)
+    t = []
+
+    #convert T and N to bytes
+    N = [bytes(str(i), 'utf-8') for i in N]
+    T = [bytes(str(i), 'utf-8') for i in T]
+   
+    # Define the parameters p & q
+    p = len(T) / len(N)
+    q = 1 - p
+
+    # Create a rational filter
+    bloomy = rational.RationalFilter(len(N), p, q)
     u_k, l_k = bloomy.sample_k()
 
-    upper_k = data[:u_k]
-    lower_k = data[-l_k:]
-    #convert values in upper_k and lower_k to bytes
-
-    for i in lower_k:
-        bloomy.add(i, math.floor(bloomy.k))
+    upper_k = T[:u_k]
+    lower_k = T[-l_k:]
 
     for i in upper_k:
         bloomy.add(i, math.floor(bloomy.k + 1))
 
-    #getupper_k of N 
-    pprint("=====================================")
-    pprint("n: {}".format(n))
-    pprint("fp: {}".format(fp))
-    pprint("k: {}".format(bloomy.k))
-    pprint("bit_length: {}".format(bloomy.bit_length))
-    pprint("r: {}".format(bloomy.r))
-    pprint("=====================================")
-    pprint("Upper k: {}".format(upper_k))
-    pprint("Lower k: {}".format(lower_k))
-    pprint("=====================================")
-    pprint("Bitmap: {}".format(bloomy.bitmap))
-    pprint("=====================================")
-    pprint("values in filter: {}".format(data))
-    pprint("=====================================")
+    for i in lower_k:
+        bloomy.add(i, math.floor(bloomy.k))
+
+
+        
+
+    pprint("The bitmap is: {}".format(bloomy.bitmap))
+    pprint("N is: {}".format(bloomy.n))
+    pprint("p is: {}".format(bloomy.p))
+    pprint("q is: {}".format(bloomy.q))
+    pprint("k is: {}".format(bloomy.k))
+    pprint("upper_k is: {}".format(math.floor(bloomy.k + 1)))
+    pprint("lower_k is: {}".format(math.floor(bloomy.k)))
+    pprint("r is: {}".format(bloomy.r))
+    pprint("T is: {}".format(T))
+    pprint("Length of T is: {}".format(len(T)))
+    pprint("=============================================================")
+    pprint("u_k is: {}".format(u_k))
+    pprint("l_k is: {}".format(l_k))
+    pprint("Based on T, the upper_k is: {}".format(upper_k))
+    pprint("Based on T, the lower_k is: {}".format(lower_k))
+    pprint("Witness size is: {}".format(bloomy.witness_size))
+    pprint("=============================================================")
+    pprint("The length of the bitmap is: {}".format(len(bloomy.bitmap)))
+    pprint("=============================================================")
+    pprint("Initiating sanity check...")
+    pprint("Check that the true positives are in the filter...")
 
     for i in upper_k:
-        pprint("Querying: {}".format(i))
-        pprint(bloomy.query(i, math.floor(bloomy.k + 1)))
-    for i in lower_k:
-        pprint("Querying: {}".format(i))
+        pprint("checking using k = {}".format(math.floor(bloomy.k)))
         pprint(bloomy.query(i, math.floor(bloomy.k)))
-    pprint("=====================================")
-    pprint("Check FPR on dummy data")
-    #generate dummy data and convert to bytes
-    dummy = [i for i in range(0, 100)]
-    dummy = [bytes(str(i), 'utf-8') for i in dummy]
-    #need r to accurately split the data 
-    r = bloomy.r
-    #split the data into upper and lower k
-    upper_k = math.floor( r * len(dummy)) 
-    lower_k = math.ceil((1 - r) * len(dummy))
 
-    upper_k = dummy[:upper_k]
-    lower_k = dummy[-lower_k:]
-    #convert values in upper_k and lower_k to bytes
-
-    #query the filtef for values in upper_k and lower_k
-    for i in upper_k:
-        if bloomy.query(i, math.floor(bloomy.k + 1)):
-            pprint("True or false positive: {}".format(i)) 
-            if i in data:
-                witness.append(1) #true positive
-            else:
-                witness.append(0) #false positive
     for i in lower_k:
-        if bloomy.query(i, math.floor(bloomy.k)):
-            pprint("True or false positive: {}".format(i))
-            if i in data:
-                witness.append(1)
-            else:
-                witness.append(0)
-    print("=====================================")
-    print("Witness: {}".format(witness))
-    print("witnes length: {}".format(len(witness)))
+        pprint("checking using k = {}".format(math.floor(bloomy.k + 1)))
+        pprint(bloomy.query(i, math.floor(bloomy.k + 1)))
+        
+
+    pprint("=============================================================")
+    pprint("now we query the set N against the filter...")
+
+    u_k_n = bloomy.r * len(N)
+    l_k_n = (1 - bloomy.r) * len(N)
+
+    upper_k_n = N[:math.floor(u_k_n)]
+    lower_k_n = N[-math.ceil(l_k_n):]
+
+    for i in upper_k_n:
+        if i in T:
+            if bloomy.query(i, math.floor(bloomy.k)):
+                t.append(i)
+        else:
+            if bloomy.query(i, math.floor(bloomy.k + 1)):
+                fp.append(i)
+
+    for i in lower_k_n:
+        if i in T:
+            if bloomy.query(i, math.floor(bloomy.k)):
+                t.append(i)
+        else:
+            if bloomy.query(i, math.floor(bloomy.k + 1)):
+                fp.append(i)
+     
+    pprint("=============================================================")
+    pprint("The true positives are: {}".format(t))
+    pprint("The false positives are: {}".format(fp))
+    pprint("size of true positives is: {}".format(len(t)))
+    pprint("size of false positives is: {}".format(len(fp)))
+
+
+
+

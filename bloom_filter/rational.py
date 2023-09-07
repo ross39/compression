@@ -3,7 +3,6 @@ A rational filter implemented in Python.
 @Author Ross Heaney
 """
 import random
-from sympy import isprime
 import math
 random.seed(2)
 import xxhash
@@ -24,15 +23,16 @@ class RationalFilter:
     @Param h1: The first hash function.
     @Param h2: The second hash function.
     """
-    def __init__(self,n, fp):
-        self.n = n
-        self.k, self.bit_length, self.bitmap, self.fpr = self.calculate_parameters(n, fp)
+    def __init__(self,n, p, q):
+        self.n, self.p, self.q = n, p, q
+        self.k, self.bit_length, self.bitmap = self.calculate_parameters(n, p, q)
         self.r = self.k - math.floor(self.k)
         self.upper_k, self.lower_k = self.sample_k()
         self.h1 = xxhash.xxh64
         self.h2 = xxhash.xxh64
+        self.witness_size = math.ceil((self.p * self.n) * (1 + 1/math.log(2) ** 2))
 
-    def calculate_parameters(self,n, fp):
+    def calculate_parameters(self,n, p, q):
         """
         Calculate the parameters for the rational filter.
         :param length: The length of the data.
@@ -42,14 +42,13 @@ class RationalFilter:
         @return bitmap: The actual filter
         @return fp: The false positive rate.
         """
-        ln_pfp = math.log(fp)
-        ln_2 = math.log(2)
-
-        k = -(ln_pfp / ln_2)
-        bit_length = -(n * ln_pfp / ln_2**2)
+        L = math.log(2) 
+        GAMMA = 1 / math.log(2)
+        k = math.log10(q * L **2  / p) 
+        bit_length = (p * n) * k * GAMMA
 
         # we will use math.ceil to approximate the values to the next integer
-        return k, math.ceil(bit_length), [0] * math.ceil(bit_length), fp
+        return k, math.ceil(bit_length), [0] * math.ceil(bit_length)
 
     def add(self, data, k):
         """
@@ -97,8 +96,8 @@ class RationalFilter:
         """
 
         #if r is .6 then 60 % will go k + 1 and 40 % will go to k
-        upper_k = self.r * self.n
-        lower_k = (1 -self.r) * self.n
+        upper_k = self.r * (self.n * self.p)
+        lower_k = (1 -self.r) * (self.n * self.p)
 
         return math.floor(upper_k), math.ceil(lower_k)
 

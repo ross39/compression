@@ -8,8 +8,10 @@ import random
 
 if __name__ == '__main__':
     # Define N & T
-    N = [i for i in range(0, 100)]
-    T = [i for i in random.sample(range(0, 100), 30)]
+    N = [i for i in range(0, 10)] #these are just indexes 
+    T = [i for i in random.sample(range(0, 10), 3)] #these are just indexes
+    #sort T 
+    T.sort()
     witness = []
     fp = []
     t = []
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     pprint("l_k is: {}".format(l_k))
     pprint("Based on T, the upper_k is: {}".format(upper_k))
     pprint("Based on T, the lower_k is: {}".format(lower_k))
-    pprint("Witness size is: {}".format(bloomy.witness_size))
+    pprint("The optimal witness size: {}".format(bloomy.witness_size))
     pprint("=============================================================")
     pprint("The length of the bitmap is: {}".format(len(bloomy.bitmap)))
     pprint("=============================================================")
@@ -70,25 +72,30 @@ if __name__ == '__main__':
     lower_k_n = N[-math.ceil(l_k_n):]
 
     #convert t to a set, should get faster lookups 
-    #T = set(T)
     for i in upper_k_n:
         if i in T:
             if bloomy.query(i, math.floor(bloomy.k)):
                 witness.append(1)
+                fp.append(i)
         else:
             if bloomy.query(i, math.floor(bloomy.k + 1)):
                 witness.append(0)
+                fp.append(i)
 
     for i in lower_k_n:
         if i in T:
             if bloomy.query(i, math.floor(bloomy.k)):
                 witness.append(1)
+                fp.append(i)
         else:
             if bloomy.query(i, math.floor(bloomy.k + 1)):
                 witness.append(0)
+                fp.append(i)
      
     pprint("=============================================================")
-    pprint("The witness size is: {}".format(len(witness)))
+    pprint("The actual witness size is: {}".format(len(witness)))
+    pprint("Witness is: {}".format(witness))
+    pprint("The elements caught are: {}".format(fp))
     pprint("the true positives are in the filter(should be equal to size of T): {}".format(witness.count(1)))
     pprint("the false positives are in the filter: {}".format(witness.count(0)))
     pprint("=============================================================")
@@ -100,22 +107,24 @@ if __name__ == '__main__':
     count = 0
 
     for i in upper_k_n:
-        contained = 1
-        if bloomy.query(i, math.floor(bloomy.k + 1)) == False:
-            if bloomy.query(i, math.floor(bloomy.k)) == False:
-                contained = 0
-        if contained == 1:
-            caught.append(i)
+        if i in T:
+            if bloomy.query(i, math.floor(bloomy.k)):
+                caught.append(i)
+        else:
+            if bloomy.query(i, math.floor(bloomy.k + 1)):
+                caught.append(i)
 
     for i in lower_k_n:
-        contained = 1
-        if bloomy.query(i, math.floor(bloomy.k + 1)) == False:
-            if bloomy.query(i, math.floor(bloomy.k)) == False:
-                contained = 0
-        if contained == 1:
-            caught.append(i)
+        if i in T:
+            if bloomy.query(i, math.floor(bloomy.k)):
+                caught.append(i)
+        else:
+            if bloomy.query(i, math.floor(bloomy.k + 1)):
+                caught.append(i)
+
 
     pprint("caught is size: {}".format(len(caught)))
+    pprint("caught is: {}".format(caught))
 
     for i in caught:
         try:
@@ -127,13 +136,9 @@ if __name__ == '__main__':
         except IndexError:
             break
 
-    print("recovered t size is: {}".format(len(reconstructed_T)))
-    #print first 20 elements of T
-    T.sort()
-    reconstructed_T.sort()
-
-    pprint("the first 20 elements of T are: {}".format(T[:20]))
-    pprint("the first 20 elements of reconstructed T are: {}".format(reconstructed_T[:20]))
+    if reconstructed_T == T:
+        pprint("The reconstructed T is: {}".format(reconstructed_T))
+        pprint("The reconstructed T is equal to T: {}".format(True))
 
 
 
